@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -89,31 +88,23 @@ export const useConfigStore = create<ConfigStore>()(
   ),
 );
 
-export function useEffectiveAiConfig(config: AiConfig) {
-  const modelChannel = useConfigStore((state) => state.publicSettings?.modelChannel);
-
-  return useMemo(() => {
-    const channelMode = modelChannel?.allowCustomChannel ? config.channelMode : "remote";
-    if (channelMode === "local" || !modelChannel) return { ...config, channelMode };
-    const models = modelChannel.availableModels;
-    return {
-      ...config,
-      channelMode,
-      models,
-      model: models.includes(config.model) ? config.model : modelChannel.defaultModel,
-      imageModel: models.includes(config.imageModel) ? config.imageModel : modelChannel.defaultImageModel || modelChannel.defaultModel,
-      textModel: models.includes(config.textModel) ? config.textModel : modelChannel.defaultTextModel || modelChannel.defaultModel,
-      systemPrompt: modelChannel.systemPrompt,
-    };
-  }, [config, modelChannel]);
-}
-
-export function normalizeBaseUrl(value: string) {
-  return value.trim().replace(/\/+$/, "");
+export function resolveEffectiveConfig(config: AiConfig, modelChannel: AdminPublicSettings["modelChannel"] | null) {
+  const channelMode = modelChannel?.allowCustomChannel ? config.channelMode : "remote";
+  if (channelMode === "local" || !modelChannel) return { ...config, channelMode };
+  const models = modelChannel.availableModels;
+  return {
+    ...config,
+    channelMode,
+    models,
+    model: models.includes(config.model) ? config.model : modelChannel.defaultModel,
+    imageModel: models.includes(config.imageModel) ? config.imageModel : modelChannel.defaultImageModel || modelChannel.defaultModel,
+    textModel: models.includes(config.textModel) ? config.textModel : modelChannel.defaultTextModel || modelChannel.defaultModel,
+    systemPrompt: modelChannel.systemPrompt,
+  };
 }
 
 export function buildApiUrl(baseUrl: string, path: string) {
-  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+  const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, "");
   const apiBaseUrl = normalizedBaseUrl.endsWith("/v1") ? normalizedBaseUrl : `${normalizedBaseUrl}/v1`;
   return `${apiBaseUrl}${path}`;
 }

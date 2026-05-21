@@ -1,7 +1,7 @@
 import axios from "axios";
 
 import { buildApiUrl, type AiConfig } from "@/stores/use-config-store";
-import { createId } from "@/lib/id";
+import { nanoid } from "nanoid";
 import { dataUrlToFile } from "@/lib/image-utils";
 import { imageToDataUrl } from "@/services/image-storage";
 import type { ReferenceImage } from "@/types/image";
@@ -31,7 +31,7 @@ function parseImagePayload(payload: ImageApiResponse) {
     payload.data
       ?.map(resolveImageDataUrl)
       .filter((value): value is string => Boolean(value))
-      .map((dataUrl) => ({ id: createId(), dataUrl })) || [];
+      .map((dataUrl) => ({ id: nanoid(), dataUrl })) || [];
 
   if (images.length === 0) {
     throw new Error("接口没有返回图片");

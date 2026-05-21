@@ -6,9 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import { Home, ImageIcon, Images, Keyboard, List, LogOut, Menu, MessageSquare, Plus, Redo2, Settings2, Trash2, Undo2, Upload } from "lucide-react";
 
 import { requestEdit, requestGeneration, requestImageQuestion } from "@/services/api/image";
-import { defaultConfig, isAiConfigReady, type AiConfig, useConfigStore, useEffectiveAiConfig } from "@/stores/use-config-store";
+import { defaultConfig, isAiConfigReady, resolveEffectiveConfig, type AiConfig, useConfigStore } from "@/stores/use-config-store";
 import { resolveImageUrl, uploadImage, type UploadedImage } from "@/services/image-storage";
-import { createId } from "@/lib/id";
+import { nanoid } from "nanoid";
 import { getDataUrlByteSize, readImageMeta } from "@/lib/image-utils";
 import { canvasThemes, type CanvasBackgroundMode } from "@/lib/canvas-theme";
 import { useThemeStore } from "@/stores/use-theme-store";
@@ -231,7 +231,7 @@ function InfiniteCanvasPage() {
   });
 
   const config = useConfigStore((state) => state.config);
-  const effectiveConfig = useEffectiveAiConfig(config);
+  const effectiveConfig = useConfigStore((state) => resolveEffectiveConfig(state.config, state.publicSettings?.modelChannel || null));
   const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
   const addAsset = useAssetStore((state) => state.addAsset);
   const cleanupAssetImages = useAssetStore((state) => state.cleanupImages);
@@ -486,7 +486,7 @@ function InfiniteCanvasPage() {
       return;
     }
     setNodes((prev) => [...prev, newNode]);
-    setConnections((prev) => [...prev, { id: createId(), ...connection }]);
+    setConnections((prev) => [...prev, { id: nanoid(), ...connection }]);
     setSelectedNodeIds(new Set([newNode.id]));
     setSelectedConnectionId(null);
     setDialogNodeId(newNode.id);
@@ -1287,7 +1287,7 @@ function InfiniteCanvasPage() {
     const cropped = await cropDataUrl(node.metadata.content, crop);
     const image = await uploadImage(cropped);
     const width = Math.min(node.width, Math.max(220, image.width));
-    const childId = createId();
+    const childId = nanoid();
     const child: CanvasNodeData = {
       id: childId,
       type: CanvasNodeType.Image,
@@ -1301,7 +1301,7 @@ function InfiniteCanvasPage() {
       },
     };
     setNodes((prev) => [...prev, child]);
-    setConnections((prev) => [...prev, { id: createId(), fromNodeId: node.id, toNodeId: childId }]);
+    setConnections((prev) => [...prev, { id: nanoid(), fromNodeId: node.id, toNodeId: childId }]);
     setSelectedNodeIds(new Set([childId]));
     setDialogNodeId(childId);
     setCropNodeId(null);
@@ -1314,7 +1314,7 @@ function InfiniteCanvasPage() {
       openConfigDialog(true);
       return;
     }
-    const childId = createId();
+    const childId = nanoid();
     const imageConfig = NODE_DEFAULT_SIZE[CanvasNodeType.Image];
     const title = buildAngleLabel(params);
     const prompt = buildAnglePrompt(params);
@@ -1329,7 +1329,7 @@ function InfiniteCanvasPage() {
       height: imageConfig.height,
       metadata: { prompt, status: NODE_STATUS_LOADING },
     }]);
-    setConnections((prev) => [...prev, { id: createId(), fromNodeId: node.id, toNodeId: childId }]);
+    setConnections((prev) => [...prev, { id: nanoid(), fromNodeId: node.id, toNodeId: childId }]);
     setSelectedNodeIds(new Set([childId]));
     setDialogNodeId(childId);
     try {
@@ -1466,8 +1466,8 @@ function InfiniteCanvasPage() {
           const parentPosition = sourceNode?.position || { x: 0, y: 0 };
           const gap = 96;
           const rowGap = 36;
-          const rootId = createId();
-          const childIds = count > 1 ? Array.from({ length: count }, () => createId()) : [];
+          const rootId = nanoid();
+          const childIds = count > 1 ? Array.from({ length: count }, () => nanoid()) : [];
           const targetIds = count > 1 ? childIds : [rootId];
           pendingChildIds = [rootId, ...childIds];
           const rootNode: CanvasNodeData = {
@@ -1494,7 +1494,7 @@ function InfiniteCanvasPage() {
             height: imageConfig.height,
             metadata: { prompt: effectivePrompt, status: NODE_STATUS_LOADING, batchRootId: count > 1 ? rootId : undefined },
           }));
-          const batchConnections = [{ id: createId(), fromNodeId: nodeId, toNodeId: rootId }, ...childIds.map((childId) => ({ id: createId(), fromNodeId: rootId, toNodeId: childId }))];
+          const batchConnections = [{ id: nanoid(), fromNodeId: nodeId, toNodeId: rootId }, ...childIds.map((childId) => ({ id: nanoid(), fromNodeId: rootId, toNodeId: childId }))];
 
           setNodes((prev) => [
             ...prev.map((node) =>
@@ -1564,7 +1564,7 @@ function InfiniteCanvasPage() {
         const parentConfig = NODE_DEFAULT_SIZE[isConfigNode ? CanvasNodeType.Config : CanvasNodeType.Text];
         const textConfig = NODE_DEFAULT_SIZE[CanvasNodeType.Text];
         const parentPosition = sourceNode?.position || { x: 0, y: 0 };
-        const childIds = isConfigNode || editingTextNode ? Array.from({ length: textCount }, () => createId()) : [];
+        const childIds = isConfigNode || editingTextNode ? Array.from({ length: textCount }, () => nanoid()) : [];
         pendingChildIds = childIds;
         if (isConfigNode || editingTextNode) {
           const childNodes: CanvasNodeData[] = childIds.map((id, index) => ({
@@ -1580,7 +1580,7 @@ function InfiniteCanvasPage() {
             metadata: { prompt, status: NODE_STATUS_LOADING, fontSize: 14 },
           }));
           setNodes((prev) => [...prev.map((node) => node.id === nodeId && isConfigNode ? { ...node, metadata: { ...node.metadata, prompt, status: NODE_STATUS_LOADING, errorDetails: undefined } } : node), ...childNodes]);
-          setConnections((prev) => [...prev, ...childIds.map((childId) => ({ id: createId(), fromNodeId: nodeId, toNodeId: childId }))]);
+          setConnections((prev) => [...prev, ...childIds.map((childId) => ({ id: nanoid(), fromNodeId: nodeId, toNodeId: childId }))]);
         }
 
         const answers = await Promise.all(
@@ -1690,7 +1690,7 @@ function InfiniteCanvasPage() {
       size: effectiveConfig.size,
       count: 3,
     });
-    const connection = { id: createId(), fromNodeId: sourceNode.id, toNodeId: configNode.id };
+    const connection = { id: nanoid(), fromNodeId: sourceNode.id, toNodeId: configNode.id };
     const nextNodes = nodesRef.current.map((item) => item.id === sourceNode.id ? { ...item, metadata: { ...item.metadata, content: prompt, prompt, status: NODE_STATUS_SUCCESS } } : item).concat(configNode);
     const nextConnections = [...connectionsRef.current, connection];
     nodesRef.current = nextNodes;

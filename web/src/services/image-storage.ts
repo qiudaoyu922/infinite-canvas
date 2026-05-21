@@ -2,7 +2,7 @@
 
 import localforage from "localforage";
 
-import { createId } from "@/lib/id";
+import { nanoid } from "nanoid";
 import { readImageMeta } from "@/lib/image-utils";
 
 export type UploadedImage = {
@@ -19,7 +19,7 @@ const objectUrls = new Map<string, string>();
 
 export async function uploadImage(input: string | Blob): Promise<UploadedImage> {
   const blob = typeof input === "string" ? await (await fetch(input)).blob() : input;
-  const storageKey = `image:${createId()}`;
+  const storageKey = `image:${nanoid()}`;
   await store.setItem(storageKey, blob);
   const url = URL.createObjectURL(blob);
   objectUrls.set(storageKey, url);

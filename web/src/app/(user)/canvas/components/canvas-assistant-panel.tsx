@@ -7,9 +7,9 @@ import { motion } from "motion/react";
 
 import { ImageGenerationPending } from "@/components/image-generation-pending";
 import { ModelPicker } from "@/components/model-picker";
-import { isAiConfigReady, useConfigStore, useEffectiveAiConfig, type AiConfig } from "@/stores/use-config-store";
+import { isAiConfigReady, resolveEffectiveConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import { canvasThemes } from "@/lib/canvas-theme";
-import { createId } from "@/lib/id";
+import { nanoid } from "nanoid";
 import { cn } from "@/lib/utils";
 import { requestEdit, requestGeneration, requestImageQuestion, type ChatCompletionMessage } from "@/services/api/image";
 import { imageToDataUrl, uploadImage } from "@/services/image-storage";
@@ -41,7 +41,7 @@ type CanvasAssistantPanelProps = {
 export function CanvasAssistantPanel({ nodes, selectedNodeIds, sessions, activeSessionId, onSelectNodeIds, onSessionsChange, onInsertImage, onInsertText, onPasteImage, onCollapseStart, onCollapse }: CanvasAssistantPanelProps) {
   const theme = canvasThemes[useThemeStore((state) => state.theme)];
   const config = useConfigStore((state) => state.config);
-  const effectiveConfig = useEffectiveAiConfig(config);
+  const effectiveConfig = useConfigStore((state) => resolveEffectiveConfig(state.config, state.publicSettings?.modelChannel || null));
   const cleanupImages = useAssetStore((state) => state.cleanupImages);
   const updateConfig = useConfigStore((state) => state.updateConfig);
   const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
@@ -149,8 +149,8 @@ export function CanvasAssistantPanel({ nodes, selectedNodeIds, sessions, activeS
     }
 
     const refs = savedReferences || selectedReferences;
-    const userMessage: CanvasAssistantMessage = { id: createId(), role: "user", mode: nextMode, text, references: refs };
-    const assistantId = createId();
+    const userMessage: CanvasAssistantMessage = { id: nanoid(), role: "user", mode: nextMode, text, references: refs };
+    const assistantId = nanoid();
     appendMessage(session.id, userMessage);
     appendMessage(session.id, { id: assistantId, role: "assistant", mode: nextMode, text: nextMode === "image" ? "正在生成图片" : "正在回答", isLoading: true });
     setPrompt("");
@@ -616,5 +616,5 @@ async function buildChatMessages(messages: CanvasAssistantMessage[]): Promise<Ch
 
 function createSession(): CanvasAssistantSession {
   const now = new Date().toISOString();
-  return { id: createId(), title: "新对话", messages: [], createdAt: now, updatedAt: now };
+  return { id: nanoid(), title: "新对话", messages: [], createdAt: now, updatedAt: now };
 }

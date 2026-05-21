@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist, type PersistStorage, type StorageValue } from "zustand/middleware";
 
-import { createId } from "@/lib/id";
+import { nanoid } from "nanoid";
 import { localForageStorage } from "@/lib/localforage-storage";
 import { cleanupUnusedImages, resolveImageUrl, uploadImage } from "@/services/image-storage";
 
@@ -63,7 +63,7 @@ export const useAssetStore = create<AssetStore>()(
       assets: [],
       addAsset: (asset) => {
         const now = new Date().toISOString();
-        const id = createId();
+        const id = nanoid();
         set((state) => ({ assets: [{ ...asset, id, createdAt: now, updatedAt: now } as Asset, ...state.assets] }));
         return id;
       },

@@ -8,8 +8,8 @@ import localforage from "localforage";
 import { ModelPicker } from "@/components/model-picker";
 import { PromptSelectDialog } from "@/components/prompts/prompt-select-dialog";
 import { AssetPickerModal, type InsertAssetPayload } from "@/app/(user)/canvas/components/asset-picker-modal";
-import { isAiConfigReady, useConfigStore, useEffectiveAiConfig, type AiConfig } from "@/stores/use-config-store";
-import { createId } from "@/lib/id";
+import { isAiConfigReady, resolveEffectiveConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
+import { nanoid } from "nanoid";
 import { formatBytes, formatDuration, getDataUrlByteSize, readImageMeta } from "@/lib/image-utils";
 import { requestEdit, requestGeneration } from "@/services/api/image";
 import { uploadImage } from "@/services/image-storage";
@@ -60,7 +60,7 @@ export default function ImagePage() {
   const { message } = App.useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const config = useConfigStore((state) => state.config);
-  const effectiveConfig = useEffectiveAiConfig(config);
+  const effectiveConfig = useConfigStore((state) => resolveEffectiveConfig(state.config, state.publicSettings?.modelChannel || null));
   const updateConfig = useConfigStore((state) => state.updateConfig);
   const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
   const addAsset = useAssetStore((state) => state.addAsset);
@@ -97,7 +97,7 @@ export default function ImagePage() {
     const imageFiles = Array.from(files || []).filter((file) => file.type.startsWith("image/"));
     const nextReferences = await Promise.all(imageFiles.map(async (file) => {
       const image = await uploadImage(file);
-      return { id: createId(), name: file.name, type: image.mimeType, dataUrl: image.url, storageKey: image.storageKey };
+      return { id: nanoid(), name: file.name, type: image.mimeType, dataUrl: image.url, storageKey: image.storageKey };
     }));
     setReferences((value) => [...value, ...nextReferences]);
   };
@@ -112,7 +112,7 @@ export default function ImagePage() {
       }
       const nextReferences = await Promise.all(blobs.map(async (blob, index) => {
         const image = await uploadImage(blob);
-        return { id: createId(), name: `clipboard-${index + 1}.png`, type: image.mimeType, dataUrl: image.url, storageKey: image.storageKey };
+        return { id: nanoid(), name: `clipboard-${index + 1}.png`, type: image.mimeType, dataUrl: image.url, storageKey: image.storageKey };
       }));
       setReferences((value) => [...value, ...nextReferences]);
       message.success(`已读取 ${nextReferences.length} 张参考图`);
@@ -139,7 +139,7 @@ export default function ImagePage() {
     setElapsedMs(0);
     setRunning(true);
     setPreviewLog(null);
-    setResults(Array.from({ length: generationCount }, () => ({ id: createId(), status: "pending" })));
+    setResults(Array.from({ length: generationCount }, () => ({ id: nanoid(), status: "pending" })));
     const batchStartedAt = performance.now();
     setStartedAt(batchStartedAt);
 
@@ -170,7 +170,7 @@ export default function ImagePage() {
 
   const addResultToReferences = async (image: GeneratedImage, index: number) => {
     const stored = await uploadImage(image.dataUrl);
-    setReferences((value) => [...value, { id: createId(), name: `result-${index + 1}.png`, type: stored.mimeType, dataUrl: stored.url, storageKey: stored.storageKey }]);
+    setReferences((value) => [...value, { id: nanoid(), name: `result-${index + 1}.png`, type: stored.mimeType, dataUrl: stored.url, storageKey: stored.storageKey }]);
     message.success("已加入参考图");
   };
 
@@ -193,7 +193,7 @@ export default function ImagePage() {
       setPrompt(payload.content);
     } else {
       const stored = await uploadImage(payload.dataUrl);
-      setReferences((value) => [...value, { id: createId(), name: payload.title, type: stored.mimeType, dataUrl: stored.url, storageKey: stored.storageKey }]);
+      setReferences((value) => [...value, { id: nanoid(), name: payload.title, type: stored.mimeType, dataUrl: stored.url, storageKey: stored.storageKey }]);
     }
     setAssetPickerOpen(false);
   };
@@ -583,7 +583,7 @@ async function readStoredLogs() {
 
 function normalizeLog(log: Partial<GenerationLog>): GenerationLog {
   return {
-    id: log.id || createId(),
+    id: log.id || nanoid(),
     createdAt: log.createdAt || Date.now(),
     title: log.title || log.model || "未命名",
     time: log.time || new Date().toLocaleString("zh-CN", { hour12: false }),
@@ -601,7 +601,7 @@ function normalizeLog(log: Partial<GenerationLog>): GenerationLog {
 
 function buildLog({ prompt, model, config, durationMs, successCount, failCount, status, thumbnails }: { prompt: string; model: string; config: { size: string; quality: string; count?: string }; durationMs: number; successCount: number; failCount: number; status: GenerationLog["status"]; thumbnails: string[] }): GenerationLog {
   return {
-    id: createId(),
+    id: nanoid(),
     createdAt: Date.now(),
     title: prompt.slice(0, 12) || "未命名",
     time: new Date().toLocaleString("zh-CN", { hour12: false }),

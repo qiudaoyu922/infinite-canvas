@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, type PersistStorage, type StorageValue } from "zustand/middleware";
 
-import { createId } from "@/lib/id";
+import { nanoid } from "nanoid";
 import { localForageStorage } from "@/lib/localforage-storage";
 import type { CanvasBackgroundMode } from "@/lib/canvas-theme";
 import type { CanvasAssistantSession, CanvasConnection, CanvasNodeData, ViewportTransform } from "../types";
@@ -64,7 +64,7 @@ export const useCanvasStore = create<CanvasStore>()(
       projects: [],
       createProject: (title = "未命名画布") => {
         const now = new Date().toISOString();
-        const id = createId();
+        const id = nanoid();
         const project: CanvasProject = {
           id,
           title,
@@ -83,7 +83,7 @@ export const useCanvasStore = create<CanvasStore>()(
       importProject: (source) => {
         const now = new Date().toISOString();
         const project: CanvasProject = {
-          id: createId(),
+          id: nanoid(),
           title: source.title || "导入画布",
           createdAt: source.createdAt || now,
           updatedAt: now,
