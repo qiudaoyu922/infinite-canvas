@@ -27,6 +27,8 @@ export type AiConfig = {
     baseUrl: string;
     apiKey: string;
     apiFormat: ApiCallFormat;
+    useSiteProxy: boolean;
+    siteProxyUpstreamUrl: string;
     channels: ModelChannel[];
     model: string;
     imageModel: string;
@@ -64,12 +66,15 @@ const CHANNEL_MODEL_SEPARATOR = "::";
 const OPENAI_BASE_URL = "https://api.openai.com";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 export const SITE_PROXY_BASE_URL = "/api/openai";
+export const SITE_PROXY_UPSTREAM_HEADER = "x-site-proxy-upstream";
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
     baseUrl: OPENAI_BASE_URL,
     apiKey: "",
     apiFormat: "openai",
+    useSiteProxy: false,
+    siteProxyUpstreamUrl: "",
     channels: [
         {
             id: "default",
@@ -264,11 +269,11 @@ export function normalizeChannelModels(models: Array<string | ChannelModel> | un
 
 export function createModelChannel(channel?: Partial<ModelChannel>): ModelChannel {
     const useSiteProxy = Boolean(channel?.useSiteProxy);
-    const apiFormat = useSiteProxy ? "openai" : normalizeApiFormat(channel?.apiFormat);
+    const apiFormat = normalizeApiFormat(channel?.apiFormat);
     return {
         id: channel?.id?.trim() || nanoid(),
         name: channel?.name?.trim() || "新渠道",
-        baseUrl: useSiteProxy ? SITE_PROXY_BASE_URL : channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
+        baseUrl: channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
         apiKey: channel?.apiKey || "",
         useSiteProxy,
         apiFormat,
@@ -332,7 +337,13 @@ export function resolveModelRequestConfig(config: AiConfig, value: string) {
         baseUrl: channel.useSiteProxy ? SITE_PROXY_BASE_URL : channel.baseUrl,
         apiKey: channel.apiKey,
         apiFormat: channel.useSiteProxy ? "openai" : channel.apiFormat,
+        useSiteProxy: channel.useSiteProxy,
+        siteProxyUpstreamUrl: channel.useSiteProxy ? channel.baseUrl : "",
     };
+}
+
+export function siteProxyHeaders(config: Pick<AiConfig, "useSiteProxy" | "siteProxyUpstreamUrl">) {
+    return config.useSiteProxy && config.siteProxyUpstreamUrl.trim() ? { [SITE_PROXY_UPSTREAM_HEADER]: config.siteProxyUpstreamUrl.trim() } : {};
 }
 
 function normalizeChannels(config: AiConfig) {
