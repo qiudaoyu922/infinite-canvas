@@ -1,8 +1,8 @@
-import { Button, Drawer, Input, Segmented, Select, Space } from "antd";
+import { Button, Drawer, Input, Segmented, Select, Space, Switch } from "antd";
 import { ListPlus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { defaultBaseUrlForApiFormat, guessCapability, normalizeChannelModels, type ApiCallFormat, type ChannelModel, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { defaultBaseUrlForApiFormat, guessCapability, normalizeChannelModels, SITE_PROXY_BASE_URL, type ApiCallFormat, type ChannelModel, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
 import { ModelScriptEditor } from "./model-script-editor";
 import { ModelSelectModal } from "./model-select-modal";
 
@@ -38,6 +38,8 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
         const baseUrl = !draft.baseUrl.trim() || draft.baseUrl.trim() === defaultBaseUrlForApiFormat(draft.apiFormat) ? defaultBaseUrlForApiFormat(apiFormat) : draft.baseUrl;
         patch({ apiFormat, baseUrl });
     };
+
+    const setSiteProxy = (useSiteProxy: boolean) => patch(useSiteProxy ? { useSiteProxy, apiFormat: "openai", baseUrl: SITE_PROXY_BASE_URL, apiKey: "" } : { useSiteProxy, baseUrl: defaultBaseUrlForApiFormat(draft.apiFormat) });
 
     const applySelection = (names: string[]) => {
         const map = new Map(draft.models.map((model) => [model.name, model]));
@@ -76,16 +78,31 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
                 </label>
                 <label className="block">
                     <span className="mb-1 block text-sm font-medium">协议</span>
-                    <Select className="w-full" value={draft.apiFormat} options={apiFormatOptions} onChange={changeApiFormat} />
+                    <Select className="w-full" value={draft.apiFormat} options={apiFormatOptions} disabled={draft.useSiteProxy} onChange={changeApiFormat} />
                 </label>
-                <label className="block md:col-span-2">
-                    <span className="mb-1 block text-sm font-medium">接口地址</span>
-                    <Input value={draft.baseUrl} onChange={(event) => patch({ baseUrl: event.target.value })} placeholder="https://api.example.com" />
-                </label>
-                <label className="block md:col-span-2">
-                    <span className="mb-1 block text-sm font-medium">API Key</span>
-                    <Input.Password value={draft.apiKey} onChange={(event) => patch({ apiKey: event.target.value })} placeholder="sk-..." />
-                </label>
+                <div className="md:col-span-2">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <div className="text-sm font-medium">使用站点代理</div>
+                            <div className="mt-0.5 text-xs text-stone-500">通过部署在 Cloudflare Pages 的同源代理访问 beeapi.ai。</div>
+                        </div>
+                        <Switch checked={draft.useSiteProxy} onChange={setSiteProxy} />
+                    </div>
+                </div>
+                {draft.useSiteProxy ? (
+                    <div className="md:col-span-2 text-xs text-stone-500">请求将发送到 {SITE_PROXY_BASE_URL}，上游 API Key 仅从 Cloudflare 的 BEE_API_KEY Secret 读取。</div>
+                ) : (
+                    <>
+                        <label className="block md:col-span-2">
+                            <span className="mb-1 block text-sm font-medium">接口地址</span>
+                            <Input value={draft.baseUrl} onChange={(event) => patch({ baseUrl: event.target.value })} placeholder="https://api.example.com" />
+                        </label>
+                        <label className="block md:col-span-2">
+                            <span className="mb-1 block text-sm font-medium">API Key</span>
+                            <Input.Password value={draft.apiKey} onChange={(event) => patch({ apiKey: event.target.value })} placeholder="sk-..." />
+                        </label>
+                    </>
+                )}
             </div>
 
             <div className="mt-6 mb-3 flex flex-wrap items-center justify-between gap-2">

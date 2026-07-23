@@ -17,6 +17,7 @@ export type ModelChannel = {
     name: string;
     baseUrl: string;
     apiKey: string;
+    useSiteProxy: boolean;
     apiFormat: ApiCallFormat;
     models: ChannelModel[];
 };
@@ -62,6 +63,7 @@ export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 const CHANNEL_MODEL_SEPARATOR = "::";
 const OPENAI_BASE_URL = "https://api.openai.com";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
+export const SITE_PROXY_BASE_URL = "/api/openai";
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
@@ -74,6 +76,7 @@ export const defaultConfig: AiConfig = {
             name: "默认渠道",
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
+            useSiteProxy: false,
             apiFormat: "openai",
             models: [
                 { name: "gpt-image-2", capability: "image" },
@@ -169,7 +172,7 @@ export function resolveModelScript(config: AiConfig, value: string) {
 
 function isAiConfigReady(config: AiConfig, model: string) {
     const channel = resolveModelChannel(config, model);
-    return Boolean(model.trim() && channel.baseUrl.trim() && channel.apiKey.trim());
+    return Boolean(model.trim() && channel.baseUrl.trim() && (channel.useSiteProxy || channel.apiKey.trim()));
 }
 
 export const useConfigStore = create<ConfigStore>()(
@@ -260,12 +263,14 @@ export function normalizeChannelModels(models: Array<string | ChannelModel> | un
 }
 
 export function createModelChannel(channel?: Partial<ModelChannel>): ModelChannel {
-    const apiFormat = normalizeApiFormat(channel?.apiFormat);
+    const useSiteProxy = Boolean(channel?.useSiteProxy);
+    const apiFormat = useSiteProxy ? "openai" : normalizeApiFormat(channel?.apiFormat);
     return {
         id: channel?.id?.trim() || nanoid(),
         name: channel?.name?.trim() || "新渠道",
-        baseUrl: channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
-        apiKey: channel?.apiKey || "",
+        baseUrl: useSiteProxy ? SITE_PROXY_BASE_URL : channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
+        apiKey: useSiteProxy ? "" : channel?.apiKey || "",
+        useSiteProxy,
         apiFormat,
         models: normalizeChannelModels(channel?.models),
     };
@@ -324,9 +329,9 @@ export function resolveModelRequestConfig(config: AiConfig, value: string) {
     return {
         ...config,
         model: modelOptionName(value || config.model),
-        baseUrl: channel.baseUrl,
-        apiKey: channel.apiKey,
-        apiFormat: channel.apiFormat,
+        baseUrl: channel.useSiteProxy ? SITE_PROXY_BASE_URL : channel.baseUrl,
+        apiKey: channel.useSiteProxy ? "" : channel.apiKey,
+        apiFormat: channel.useSiteProxy ? "openai" : channel.apiFormat,
     };
 }
 
