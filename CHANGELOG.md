@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-+ [新增] Cloudflare Pages 支持同源 beeapi.ai 代理渠道，密钥可保存在 Pages Secret 中。
++ [新增] Cloudflare Pages 支持同源 beeapi.ai 代理渠道，可转发浏览器配置的密钥。
 + [新增] 提示词来源新增 Banana Prompt Quicker，并支持添加自定义标准 JSON 来源。
 + [新增] 提示词中心新增「我的提示词」，支持本地管理、从公共库保存，并可在画布提示词库中直接使用。
 + [新增] Agent 新增统一生成任务状态查询，支持查看画布、生图工作台和视频工作台任务进度。

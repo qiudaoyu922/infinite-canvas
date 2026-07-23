@@ -1,10 +1,10 @@
-type Env = { BEE_API_KEY?: string };
-type Context = { request: Request; env: Env; params: { path?: string[] } };
+type Context = { request: Request; params: { path?: string[] } };
 
 const UPSTREAM_ORIGIN = "https://beeapi.ai";
 
-export async function onRequest({ request, env, params }: Context) {
-    if (!env.BEE_API_KEY) return Response.json({ error: { message: "未配置 BEE_API_KEY" } }, { status: 500 });
+export async function onRequest({ request, params }: Context) {
+    const authorization = request.headers.get("authorization")?.trim();
+    if (!authorization?.startsWith("Bearer ")) return Response.json({ error: { message: "请先填写 API Key" } }, { status: 401 });
 
     const path = (params.path || []).join("/").replace(/^\/+/, "");
     if (!path) return new Response("Not Found", { status: 404 });
@@ -13,8 +13,7 @@ export async function onRequest({ request, env, params }: Context) {
     target.search = new URL(request.url).search;
 
     const headers = new Headers(request.headers);
-    ["authorization", "content-length", "cookie", "host", "origin", "referer"].forEach((name) => headers.delete(name));
-    headers.set("authorization", `Bearer ${env.BEE_API_KEY}`);
+    ["content-length", "cookie", "host", "origin", "referer"].forEach((name) => headers.delete(name));
 
     try {
         return await fetch(target, {

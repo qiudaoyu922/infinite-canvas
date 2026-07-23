@@ -172,7 +172,7 @@ export function resolveModelScript(config: AiConfig, value: string) {
 
 function isAiConfigReady(config: AiConfig, model: string) {
     const channel = resolveModelChannel(config, model);
-    return Boolean(model.trim() && channel.baseUrl.trim() && (channel.useSiteProxy || channel.apiKey.trim()));
+    return Boolean(model.trim() && channel.baseUrl.trim() && channel.apiKey.trim());
 }
 
 export const useConfigStore = create<ConfigStore>()(
@@ -269,7 +269,7 @@ export function createModelChannel(channel?: Partial<ModelChannel>): ModelChanne
         id: channel?.id?.trim() || nanoid(),
         name: channel?.name?.trim() || "新渠道",
         baseUrl: useSiteProxy ? SITE_PROXY_BASE_URL : channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
-        apiKey: useSiteProxy ? "" : channel?.apiKey || "",
+        apiKey: channel?.apiKey || "",
         useSiteProxy,
         apiFormat,
         models: normalizeChannelModels(channel?.models),
@@ -330,7 +330,7 @@ export function resolveModelRequestConfig(config: AiConfig, value: string) {
         ...config,
         model: modelOptionName(value || config.model),
         baseUrl: channel.useSiteProxy ? SITE_PROXY_BASE_URL : channel.baseUrl,
-        apiKey: channel.useSiteProxy ? "" : channel.apiKey,
+        apiKey: channel.apiKey,
         apiFormat: channel.useSiteProxy ? "openai" : channel.apiFormat,
     };
 }

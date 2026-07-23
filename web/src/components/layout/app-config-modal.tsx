@@ -73,7 +73,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     };
 
     const finishConfig = () => {
-        const ready = config.channels.some((channel) => channel.baseUrl.trim() && (channel.useSiteProxy || channel.apiKey.trim()) && channel.models.length);
+        const ready = config.channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.length);
         setConfigDialogOpen(false);
         if (!ready) return;
         message.success(shouldPromptContinue ? "配置已保存，请继续刚才的请求" : "配置已保存");
@@ -334,7 +334,7 @@ function withChannels(config: AiConfig, channels: ModelChannel[]): AiConfig {
         channels,
         models: modelOptionsFromChannels(channels),
         baseUrl: channels[0]?.baseUrl || config.baseUrl,
-        apiKey: channels[0]?.useSiteProxy ? "" : channels[0]?.apiKey || config.apiKey,
+        apiKey: channels[0]?.apiKey || config.apiKey,
         apiFormat: channels[0]?.apiFormat || config.apiFormat,
     };
     return {

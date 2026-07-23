@@ -39,7 +39,7 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
         patch({ apiFormat, baseUrl });
     };
 
-    const setSiteProxy = (useSiteProxy: boolean) => patch(useSiteProxy ? { useSiteProxy, apiFormat: "openai", baseUrl: SITE_PROXY_BASE_URL, apiKey: "" } : { useSiteProxy, baseUrl: defaultBaseUrlForApiFormat(draft.apiFormat) });
+    const setSiteProxy = (useSiteProxy: boolean) => patch(useSiteProxy ? { useSiteProxy, apiFormat: "openai", baseUrl: SITE_PROXY_BASE_URL } : { useSiteProxy, baseUrl: defaultBaseUrlForApiFormat(draft.apiFormat) });
 
     const applySelection = (names: string[]) => {
         const map = new Map(draft.models.map((model) => [model.name, model]));
@@ -90,19 +90,17 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
                     </div>
                 </div>
                 {draft.useSiteProxy ? (
-                    <div className="md:col-span-2 text-xs text-stone-500">请求将发送到 {SITE_PROXY_BASE_URL}，上游 API Key 仅从 Cloudflare 的 BEE_API_KEY Secret 读取。</div>
+                    <div className="md:col-span-2 text-xs text-stone-500">请求将发送到 {SITE_PROXY_BASE_URL}，API Key 保存在浏览器本地并由代理转发。</div>
                 ) : (
-                    <>
-                        <label className="block md:col-span-2">
-                            <span className="mb-1 block text-sm font-medium">接口地址</span>
-                            <Input value={draft.baseUrl} onChange={(event) => patch({ baseUrl: event.target.value })} placeholder="https://api.example.com" />
-                        </label>
-                        <label className="block md:col-span-2">
-                            <span className="mb-1 block text-sm font-medium">API Key</span>
-                            <Input.Password value={draft.apiKey} onChange={(event) => patch({ apiKey: event.target.value })} placeholder="sk-..." />
-                        </label>
-                    </>
+                    <label className="block md:col-span-2">
+                        <span className="mb-1 block text-sm font-medium">接口地址</span>
+                        <Input value={draft.baseUrl} onChange={(event) => patch({ baseUrl: event.target.value })} placeholder="https://api.example.com" />
+                    </label>
                 )}
+                <label className="block md:col-span-2">
+                    <span className="mb-1 block text-sm font-medium">API Key</span>
+                    <Input.Password value={draft.apiKey} onChange={(event) => patch({ apiKey: event.target.value })} placeholder="sk-..." />
+                </label>
             </div>
 
             <div className="mt-6 mb-3 flex flex-wrap items-center justify-between gap-2">
