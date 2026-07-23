@@ -268,8 +268,8 @@ export function normalizeChannelModels(models: Array<string | ChannelModel> | un
 }
 
 export function createModelChannel(channel?: Partial<ModelChannel>): ModelChannel {
-    const useSiteProxy = Boolean(channel?.useSiteProxy);
-    const apiFormat = normalizeApiFormat(channel?.apiFormat);
+    const useSiteProxy = true;
+    const apiFormat: ApiCallFormat = "openai";
     return {
         id: channel?.id?.trim() || nanoid(),
         name: channel?.name?.trim() || "新渠道",
@@ -334,11 +334,11 @@ export function resolveModelRequestConfig(config: AiConfig, value: string) {
     return {
         ...config,
         model: modelOptionName(value || config.model),
-        baseUrl: channel.useSiteProxy ? SITE_PROXY_BASE_URL : channel.baseUrl,
+        baseUrl: SITE_PROXY_BASE_URL,
         apiKey: channel.apiKey,
-        apiFormat: channel.useSiteProxy ? "openai" : channel.apiFormat,
-        useSiteProxy: channel.useSiteProxy,
-        siteProxyUpstreamUrl: channel.useSiteProxy ? channel.baseUrl : "",
+        apiFormat: "openai",
+        useSiteProxy: true,
+        siteProxyUpstreamUrl: channel.baseUrl,
     };
 }
 

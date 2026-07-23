@@ -1,4 +1,4 @@
-import { Button, Drawer, Input, Segmented, Select, Space, Switch } from "antd";
+import { Button, Drawer, Input, Segmented, Select, Space } from "antd";
 import { ListPlus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -39,8 +39,6 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
         patch({ apiFormat, baseUrl });
     };
 
-    const setSiteProxy = (useSiteProxy: boolean) => patch(useSiteProxy ? { useSiteProxy, apiFormat: "openai" } : { useSiteProxy });
-
     const applySelection = (names: string[]) => {
         const map = new Map(draft.models.map((model) => [model.name, model]));
         setModels(names.map((name) => map.get(name) || { name, capability: guessCapability(name) }));
@@ -80,20 +78,10 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
                     <span className="mb-1 block text-sm font-medium">协议</span>
                     <Select className="w-full" value={draft.apiFormat} options={apiFormatOptions} disabled={draft.useSiteProxy} onChange={changeApiFormat} />
                 </label>
-                <div className="md:col-span-2">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <div className="text-sm font-medium">使用站点代理</div>
-                            <div className="mt-0.5 text-xs text-stone-500">通过部署在 Cloudflare Pages 的同源代理访问所填写的 OpenAI 兼容接口。</div>
-                        </div>
-                        <Switch checked={draft.useSiteProxy} onChange={setSiteProxy} />
-                    </div>
-                </div>
                 <label className="block md:col-span-2">
                     <span className="mb-1 block text-sm font-medium">接口地址</span>
                     <Input value={draft.baseUrl} onChange={(event) => patch({ baseUrl: event.target.value })} placeholder="https://api.example.com" />
                 </label>
-                {draft.useSiteProxy && <div className="md:col-span-2 text-xs text-stone-500">请求将先发送到站点同源地址，再由代理转发到上方填写的接口地址。</div>}
                 <label className="block md:col-span-2">
                     <span className="mb-1 block text-sm font-medium">API Key</span>
                     <Input.Password value={draft.apiKey} onChange={(event) => patch({ apiKey: event.target.value })} placeholder="sk-..." />

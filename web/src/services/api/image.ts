@@ -846,11 +846,11 @@ export async function fetchImageModels(config: Pick<AiConfig, "baseUrl" | "apiKe
 
 export async function fetchChannelModels(channel: ModelChannel) {
     return fetchImageModels({
-        baseUrl: channel.useSiteProxy ? SITE_PROXY_BASE_URL : channel.baseUrl,
+        baseUrl: SITE_PROXY_BASE_URL,
         apiKey: channel.apiKey,
-        apiFormat: channel.useSiteProxy ? "openai" : channel.apiFormat,
-        useSiteProxy: channel.useSiteProxy,
-        siteProxyUpstreamUrl: channel.useSiteProxy ? channel.baseUrl : "",
+        apiFormat: "openai",
+        useSiteProxy: true,
+        siteProxyUpstreamUrl: channel.baseUrl,
     });
 }
 
